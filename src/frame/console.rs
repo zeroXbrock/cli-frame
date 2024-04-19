@@ -3,7 +3,7 @@ use crate::frame::FrameRender;
 use crossterm::cursor::{DisableBlinking, MoveTo, SavePosition};
 use crossterm::execute;
 
-use super::{Frame, FrameConfig};
+use super::{FrameConfig, FrameEngine};
 
 #[derive(Clone)]
 pub struct ConsoleFrame {
@@ -18,18 +18,18 @@ impl FrameRender for ConsoleFrame {
         let (width, height) = if let Some((width, height)) = term_size::dimensions() {
             (width, height)
         } else {
-            panic!("Unable to get terminal size. Using default: 80 x 24");
+            (80, 24)
         };
         Self { width, height }
     }
 
     /// Create a new frame with the given configuration.
-    fn frame(&self, config: &FrameConfig) -> Frame<Self> {
+    fn new_frame_engine(&self, config: &FrameConfig) -> FrameEngine<Self> {
         let config = config
             .clone()
             .with_width(self.width)
             .with_height(self.height);
-        Frame::new(&config, self.to_owned())
+        FrameEngine::new(&config, self.to_owned())
     }
 
     /// Render a **single, pre-formatted** line of text to the console.

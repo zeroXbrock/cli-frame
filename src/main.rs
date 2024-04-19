@@ -1,13 +1,12 @@
 mod frame;
 
-use frame::FrameRender;
-use frame::{console::ConsoleFrame, FrameConfig};
+use frame::{console::ConsoleFrame, FrameConfig, FrameRender};
 use resolve_path::PathResolveExt;
 use std::borrow::Cow;
 use std::fs;
 
 fn main() {
-    // read the file contents of frame/mod.rs
+    // read the file contents of main.rs
     let test_file_path = match "src/main.rs".resolve() {
         Cow::Borrowed(p) => p.canonicalize().expect("non canonical path"),
         Cow::Owned(p) => p,
@@ -21,12 +20,12 @@ fn main() {
         .with_margin(1);
 
     // create a console frame, prints the frame to console
-    let mut frame = ConsoleFrame::new().frame(&frame_config);
+    let mut frame = ConsoleFrame::new().new_frame_engine(&frame_config);
 
     // update the frame with the contents of the file
     frame.update(&contents);
     // sleep for a second
-    std::thread::sleep(std::time::Duration::from_secs(4));
+    std::thread::sleep(std::time::Duration::from_secs(10));
     // change the frame contents
     frame.update("
     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus ac feugiat elit, quis molestie est. Aenean non sem sem. Donec auctor, ligula porttitor porttitor tempus, magna purus semper est, at aliquet dui ante at elit. Etiam maximus erat et nunc molestie, id aliquam ipsum vulputate. Maecenas justo lorem, convallis ac imperdiet sit amet, luctus quis quam. Fusce justo urna, maximus sed enim ut, euismod congue metus. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer commodo iaculis arcu, vitae imperdiet magna porta ut. Integer tristique ipsum ut mauris semper vulputate. Pellentesque eget velit vel purus dictum auctor vel vitae enim.

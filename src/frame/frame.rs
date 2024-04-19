@@ -1,14 +1,20 @@
 use crate::frame::constants::{FRAME_BG, SPACE};
 
+/// Implement the FrameRender trait to render frames for a custom writer.
 pub trait FrameRender {
+    /// Initialize struct implementing FrameRender with default values if needed.
     fn new() -> Self;
-    fn frame(&self, config: &FrameConfig) -> Frame<impl FrameRender>;
+    /// Create a new frame engine with the given configuration.
+    fn new_frame_engine(&self, config: &FrameConfig) -> FrameEngine<impl FrameRender>;
+    /// Render a single line of text.
     fn render_line(&self, line: &str);
+    /// Reset the cursor to the top left of the interface.
     fn reset_cursor(&self);
+    /// Clear the interface.
     fn clear(&self);
 }
 
-pub struct Frame<R: FrameRender> {
+pub struct FrameEngine<R: FrameRender> {
     lines_buffer: Box<[String]>,
     config: FrameConfig,
     render_engine: R,
@@ -66,7 +72,7 @@ impl FrameConfig {
     }
 }
 
-impl<R: FrameRender> Frame<R> {
+impl<R: FrameRender> FrameEngine<R> {
     pub fn new(config: &FrameConfig, render_engine: R) -> Self {
         Self {
             lines_buffer: Box::new([]),
@@ -162,7 +168,7 @@ impl<R: FrameRender> Frame<R> {
         }
     }
 
-    /// Update the frame by calling internal functions `clear` and `render`.
+    /// Update the frame; calls `clear`, updates buffer, then calls `render`.
     pub fn update(&mut self, content: &str) {
         self.clear();
         let mut buf = vec![];
@@ -180,7 +186,7 @@ fn wrap_line(line: &str, width: usize) -> Vec<String> {
     if line.len() > width {
         let (truncated, remainder) = line.split_at(width);
         lines.push(truncated.to_owned());
-        lines.extend(wrap_line(&remainder, width));
+        lines.extend(wrap_line(&remainder.trim_start(), width));
     } else {
         lines.push(line.to_owned());
     }

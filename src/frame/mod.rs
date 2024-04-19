@@ -2,4 +2,4 @@ pub mod console;
 pub mod constants;
 pub mod frame;
 
-pub use frame::{Frame, FrameConfig, FrameRender};
+pub use frame::{FrameConfig, FrameEngine, FrameRender};
