@@ -5,6 +5,7 @@ use crossterm::execute;
 
 use super::{Frame, FrameConfig};
 
+#[derive(Clone)]
 pub struct ConsoleFrame {
     width: usize,
     height: usize,
@@ -28,7 +29,7 @@ impl FrameRender for ConsoleFrame {
             .clone()
             .with_width(self.width)
             .with_height(self.height);
-        Frame::new(&config, self)
+        Frame::new(&config, self.to_owned())
     }
 
     /// Render a **single, pre-formatted** line of text to the console.

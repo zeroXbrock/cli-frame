@@ -21,8 +21,7 @@ fn main() {
         .with_margin(1);
 
     // create a console frame, prints the frame to console
-    let frame = ConsoleFrame::new();
-    let mut frame = frame.frame(&frame_config);
+    let mut frame = ConsoleFrame::new().frame(&frame_config);
 
     // update the frame with the contents of the file
     frame.update(&contents);

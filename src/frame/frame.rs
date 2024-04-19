@@ -8,10 +8,10 @@ pub trait FrameRender {
     fn clear(&self);
 }
 
-pub struct Frame<'a, R: FrameRender> {
+pub struct Frame<R: FrameRender> {
     lines_buffer: Box<[String]>,
     config: FrameConfig,
-    render_engine: &'a R,
+    render_engine: R,
 }
 
 #[derive(Clone, Debug)]
@@ -66,8 +66,8 @@ impl FrameConfig {
     }
 }
 
-impl<'a, R: FrameRender> Frame<'a, R> {
-    pub fn new(config: &FrameConfig, render_engine: &'a R) -> Self {
+impl<R: FrameRender> Frame<R> {
+    pub fn new(config: &FrameConfig, render_engine: R) -> Self {
         Self {
             lines_buffer: Box::new([]),
             config: config.clone(),
