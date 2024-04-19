@@ -11,7 +11,7 @@ pub trait FrameRender {
     /// Reset the cursor to the top left of the interface.
     fn reset_cursor(&self);
     /// Clear the interface.
-    fn clear(&self);
+    fn clear(&self, clear_char: char);
 }
 
 pub struct FrameEngine<R: FrameRender> {
@@ -27,8 +27,8 @@ pub struct FrameConfig {
     pub margin: usize,
     pub width: usize,
     pub height: usize,
-    pub space_char: &'static str,
-    pub frame_char: &'static str,
+    pub space_char: char,
+    pub frame_char: char,
 }
 
 impl Default for FrameConfig {
@@ -50,18 +50,12 @@ impl FrameConfig {
         Self::default()
     }
 
-    pub fn with_space_char(mut self, space_char: &'static str) -> Self {
-        if space_char.len() != 1 {
-            panic!("space_char must be a single character");
-        }
+    pub fn with_space_char(mut self, space_char: char) -> Self {
         self.space_char = space_char;
         self
     }
 
-    pub fn with_frame_char(mut self, frame_char: &'static str) -> Self {
-        if frame_char.len() != 1 {
-            panic!("frame_char must be a single character");
-        }
+    pub fn with_frame_char(mut self, frame_char: char) -> Self {
         self.frame_char = frame_char;
         self
     }
@@ -123,11 +117,17 @@ impl<R: FrameRender> FrameEngine<R> {
     }
 
     fn frame_col(&self) -> String {
-        FRAME_BG.repeat(self.config.border_thickness)
+        self.config
+            .frame_char
+            .to_string()
+            .repeat(self.config.border_thickness)
     }
 
     fn frame_row(&self) -> String {
-        FRAME_BG.repeat(self.frame_width())
+        self.config
+            .frame_char
+            .to_string()
+            .repeat(self.frame_width())
     }
 
     fn frame_width(&self) -> usize {
@@ -135,7 +135,7 @@ impl<R: FrameRender> FrameEngine<R> {
     }
 
     fn clear(&mut self) {
-        self.render_engine.clear();
+        self.render_engine.clear(self.config.space_char);
         self.frame_buffer = Box::new([]);
     }
 
@@ -150,7 +150,7 @@ impl<R: FrameRender> FrameEngine<R> {
             }
             self.render_engine.reset_cursor();
 
-            let top_margin = self.config.space_char.repeat(self.config.width);
+            let top_margin = self.config.space_char.to_string().repeat(self.config.width);
             // render top margin
             for _ in 0..self.config.margin {
                 self.render_engine.render_line(&top_margin);
@@ -171,6 +171,7 @@ impl<R: FrameRender> FrameEngine<R> {
                 self.frame_col(),
                 self.config
                     .space_char
+                    .to_string()
                     .repeat(self.content_width() + (self.config.padding * 2)),
                 self.frame_col(),
             );
@@ -181,6 +182,7 @@ impl<R: FrameRender> FrameEngine<R> {
                 let right_padding = self
                     .config
                     .space_char
+                    .to_string()
                     .repeat(self.content_width() - line.len() + self.config.padding);
                 self.render_engine.render_line(&format!(
                     "{}{}{}{}{}{}",

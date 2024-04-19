@@ -1,2 +1,2 @@
-pub const FRAME_BG: &str = "▓";
-pub const SPACE: &str = " ";
+pub const FRAME_BG: char = '▓';
+pub const SPACE: char = ' ';

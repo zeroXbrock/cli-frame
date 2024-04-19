@@ -1,4 +1,3 @@
-use crate::frame::constants::SPACE;
 use crate::frame::FrameRender;
 use crossterm::cursor::{DisableBlinking, MoveTo, SavePosition};
 use crossterm::execute;
@@ -38,10 +37,11 @@ impl FrameRender for ConsoleFrame {
     }
 
     /// Clear the console.
-    fn clear(&self) {
+    fn clear(&self, clear_char: char) {
         self.reset_cursor();
         for _ in 0..self.height {
-            self.render_line(&format!("{}", SPACE.repeat(self.width)));
+            self.render_line(&format!("{}", clear_char.to_string().repeat(self.width)));
+            // SPACE * (self.width)
         }
     }
 
