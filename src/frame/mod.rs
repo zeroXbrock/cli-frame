@@ -4,7 +4,7 @@ use crossterm::{
 };
 use term_size;
 
-const FRAME_BG: &str = "░";
+const FRAME_BG: &str = "▓";
 const CLEAR: &str = " ";
 
 pub struct Frame {
@@ -84,24 +84,75 @@ impl Frame {
         (self.config.border_thickness + self.config.margin + self.config.padding) * 2
     }
 
+    fn left_padding(&self) -> String {
+        " ".repeat(self.config.padding)
+    }
+
+    fn left_margin(&self) -> String {
+        " ".repeat(self.config.margin)
+    }
+
+    fn frame_col(&self) -> String {
+        FRAME_BG.repeat(self.config.border_thickness)
+    }
+
+    fn frame_row(&self) -> String {
+        FRAME_BG.repeat(self.frame_width())
+    }
+
+    fn frame_width(&self) -> usize {
+        self.width - (self.config.margin * 2)
+    }
+
     /// Render the frame.
     fn render(&self) {
         if self.lines_buffer.len() > 0 {
-            if self.lines_buffer.len() > self.content_height() {
-                panic!("Frame content is too large to fit in frame.");
-            }
             reset_cursor();
-            let left_margin = " ".repeat(self.config.margin);
-            let frame = FRAME_BG.repeat(self.config.border_thickness);
-            let left_padding = " ".repeat(self.config.padding);
+
+            let top_margin = CLEAR.repeat(self.width);
+            // render top margin
+            for _ in 0..self.config.margin {
+                println!("{}", top_margin);
+            }
+
+            // render top border
+            let row_frame = format!("{}{}", self.left_margin(), self.frame_row());
+            let row_frame = (0..self.config.border_thickness)
+                .map(|_| row_frame.clone())
+                .collect::<Vec<String>>()
+                .join("\n");
+
+            // render top padding
+            let inner_padding_row = format!(
+                "{}{}{}{}",
+                self.left_margin(),
+                self.frame_col(),
+                CLEAR.repeat(self.content_width() + (self.config.padding * 2)),
+                self.frame_col(),
+            );
+
+            // render top border w/ padding, margins
+            println!("{}", row_frame);
+            println!("{}", inner_padding_row);
+
+            // render lines
             for line in self.lines_buffer.iter() {
                 let right_padding =
-                    " ".repeat(self.content_width() - line.len() + self.config.padding);
+                    CLEAR.repeat(self.content_width() - line.len() + self.config.padding);
                 println!(
                     "{}{}{}{}{}{}",
-                    left_margin, frame, left_padding, line, right_padding, frame,
+                    self.left_margin(),
+                    self.frame_col(),
+                    self.left_padding(),
+                    line,
+                    right_padding,
+                    self.frame_col(),
                 );
             }
+
+            // render bottom padding & border
+            println!("{}", inner_padding_row);
+            println!("{}", row_frame);
         }
     }
 
@@ -120,9 +171,8 @@ impl Frame {
     /// Update the frame by calling internal functions `clear` and `render`.
     pub fn update(&mut self, content: &str) {
         self.clear();
-        let lines = content.lines();
         let mut buf = vec![];
-        for line in lines {
+        for line in content.lines() {
             buf.extend(wrap_line(line, self.content_width()));
         }
         self.lines_buffer = buf.into_boxed_slice();
@@ -138,7 +188,7 @@ fn wrap_line(line: &str, width: usize) -> Vec<String> {
         lines.push(truncated.to_owned());
         lines.extend(wrap_line(&remainder, width));
     } else {
-        lines.push(line.trim().to_owned());
+        lines.push(line.to_owned());
     }
 
     lines
