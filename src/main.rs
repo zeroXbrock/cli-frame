@@ -1,5 +1,7 @@
+mod animations;
 mod frame;
 
+use animations::Animation;
 use frame::{console::ConsoleFrame, FrameConfig, FrameRender};
 use resolve_path::PathResolveExt;
 use std::borrow::Cow;
@@ -24,12 +26,22 @@ fn main() {
 
     // update the frame with the contents of the file
     frame.update(&contents);
-    // sleep for a second
-    std::thread::sleep(std::time::Duration::from_secs(10));
-    // change the frame contents
-    frame.update("
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus ac feugiat elit, quis molestie est. Aenean non sem sem. Donec auctor, ligula porttitor porttitor tempus, magna purus semper est, at aliquet dui ante at elit. Etiam maximus erat et nunc molestie, id aliquam ipsum vulputate. Maecenas justo lorem, convallis ac imperdiet sit amet, luctus quis quam. Fusce justo urna, maximus sed enim ut, euismod congue metus. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer commodo iaculis arcu, vitae imperdiet magna porta ut. Integer tristique ipsum ut mauris semper vulputate. Pellentesque eget velit vel purus dictum auctor vel vitae enim.
+    // sleep for a bit
+    std::thread::sleep(std::time::Duration::from_secs(3));
 
-    Duis mi ex, scelerisque at urna vel, aliquet aliquet lorem. Vivamus at dapibus urna. Aenean vitae tempor est. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris at velit eu nunc venenatis gravida vitae sit amet est. Donec vitae scelerisque elit. Sed massa nisl, fermentum vel feugiat sit amet, scelerisque sed urna. Sed maximus vulputate libero a sagittis. Morbi eget nisl quis massa gravida accumsan vitae in nunc. Suspendisse viverra consectetur tortor eu sollicitudin. Sed convallis lacinia mi finibus dapibus. Donec imperdiet dui feugiat nisi porttitor ornare. Morbi posuere egestas pretium. Praesent id tincidunt augue. Mauris posuere bibendum vestibulum. Suspendisse in tristique tortor, quis volutpat lectus.
-    ");
+    // generate an animation with ascii art
+    let ani_frames = vec![
+        Animation::Camera.frames(),
+        Animation::Loading.frames(),
+        Animation::Globe.frames(),
+    ];
+    for ani in ani_frames {
+        // loop each animation a few times
+        for _ in 0..5 {
+            for frame_txt in &ani {
+                frame.update(*frame_txt);
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+        }
+    }
 }

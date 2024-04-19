@@ -15,7 +15,7 @@ pub trait FrameRender {
 }
 
 pub struct FrameEngine<R: FrameRender> {
-    lines_buffer: Box<[String]>,
+    frame_buffer: Box<[String]>,
     config: FrameConfig,
     render_engine: R,
 }
@@ -27,6 +27,8 @@ pub struct FrameConfig {
     pub margin: usize,
     pub width: usize,
     pub height: usize,
+    pub space_char: &'static str,
+    pub frame_char: &'static str,
 }
 
 impl Default for FrameConfig {
@@ -37,6 +39,8 @@ impl Default for FrameConfig {
             margin: 1,
             width: 80,
             height: 24,
+            space_char: SPACE,
+            frame_char: FRAME_BG,
         }
     }
 }
@@ -44,6 +48,22 @@ impl Default for FrameConfig {
 impl FrameConfig {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn with_space_char(mut self, space_char: &'static str) -> Self {
+        if space_char.len() != 1 {
+            panic!("space_char must be a single character");
+        }
+        self.space_char = space_char;
+        self
+    }
+
+    pub fn with_frame_char(mut self, frame_char: &'static str) -> Self {
+        if frame_char.len() != 1 {
+            panic!("frame_char must be a single character");
+        }
+        self.frame_char = frame_char;
+        self
     }
 
     pub fn with_border_thickness(mut self, border_thickness: usize) -> Self {
@@ -75,7 +95,7 @@ impl FrameConfig {
 impl<R: FrameRender> FrameEngine<R> {
     pub fn new(config: &FrameConfig, render_engine: R) -> Self {
         Self {
-            lines_buffer: Box::new([]),
+            frame_buffer: Box::new([]),
             config: config.clone(),
             render_engine: render_engine,
         }
@@ -85,10 +105,11 @@ impl<R: FrameRender> FrameEngine<R> {
         self.config.width - self.framespace()
     }
 
-    // fn content_height(&self) -> usize {
-    //     self.height - self.framespace()
-    // }
+    fn content_height(&self) -> usize {
+        self.config.height - self.framespace()
+    }
 
+    /// Total space taken up by the frame w/ margins + padding.
     fn framespace(&self) -> usize {
         (self.config.border_thickness + self.config.margin + self.config.padding) * 2
     }
@@ -115,15 +136,21 @@ impl<R: FrameRender> FrameEngine<R> {
 
     fn clear(&mut self) {
         self.render_engine.clear();
-        self.lines_buffer = Box::new([]);
+        self.frame_buffer = Box::new([]);
     }
 
     /// Render the frame.
-    fn render(&self) {
-        if self.lines_buffer.len() > 0 {
+    fn render(&mut self) {
+        if self.frame_buffer.len() > 0 {
+            if self.frame_buffer.len() + self.framespace() > self.config.height {
+                // crop content if it's too large
+                self.frame_buffer = self.frame_buffer[..self.content_height()]
+                    .to_owned()
+                    .into_boxed_slice();
+            }
             self.render_engine.reset_cursor();
 
-            let top_margin = SPACE.repeat(self.config.width);
+            let top_margin = self.config.space_char.repeat(self.config.width);
             // render top margin
             for _ in 0..self.config.margin {
                 self.render_engine.render_line(&top_margin);
@@ -142,15 +169,19 @@ impl<R: FrameRender> FrameEngine<R> {
                 "{}{}{}{}",
                 self.left_margin(),
                 self.frame_col(),
-                SPACE.repeat(self.content_width() + (self.config.padding * 2)),
+                self.config
+                    .space_char
+                    .repeat(self.content_width() + (self.config.padding * 2)),
                 self.frame_col(),
             );
             self.render_engine.render_line(&inner_padding_row);
 
             // render lines
-            for line in self.lines_buffer.iter() {
-                let right_padding =
-                    SPACE.repeat(self.content_width() - line.len() + self.config.padding);
+            for line in self.frame_buffer.iter() {
+                let right_padding = self
+                    .config
+                    .space_char
+                    .repeat(self.content_width() - line.len() + self.config.padding);
                 self.render_engine.render_line(&format!(
                     "{}{}{}{}{}{}",
                     self.left_margin(),
@@ -163,7 +194,9 @@ impl<R: FrameRender> FrameEngine<R> {
             }
 
             // render bottom padding & border
-            self.render_engine.render_line(&inner_padding_row);
+            for _ in 0..(self.config.height - self.frame_buffer.len() - self.framespace()) {
+                self.render_engine.render_line(&inner_padding_row);
+            }
             self.render_engine.render_line(&row_frame);
         }
     }
@@ -175,7 +208,7 @@ impl<R: FrameRender> FrameEngine<R> {
         for line in content.lines() {
             buf.extend(wrap_line(line, self.content_width()));
         }
-        self.lines_buffer = buf.into_boxed_slice();
+        self.frame_buffer = buf.into_boxed_slice();
         self.render();
     }
 }
