@@ -25,7 +25,7 @@ fn main() {
         .with_padding(2)
         .with_margin(1)
         .with_frame_char('░')
-        .with_space_char(' ');
+        .with_space_char('_');
 
     // create a console frame, prints the frame to console
     let mut frame1 = ConsoleFrame::new().new_frame_engine(&frame_config1);
